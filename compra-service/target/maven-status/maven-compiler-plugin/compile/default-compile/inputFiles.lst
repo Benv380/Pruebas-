@@ -1,0 +1,17 @@
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Client\AdjuntoClient.java
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Client\AuthClient.java
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Client\CompraAgilClient.java
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Client\LicitacionClient.java
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\CompraServiceApplication.java
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Controller\AdjuntoController.java
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Controller\CompraAgilController.java
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Controller\LicitacionController.java
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Dto\AdjuntoDto.java
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Dto\AuthDto.java
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Dto\CompraAgilDto.java
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Dto\LicitacionDto.java
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Security\SecurityConfig.java
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Service\AdjuntoService.java
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Service\CompraAgilService.java
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Service\LicitacionService.java
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Service\TokenCacheService.java

@@ -1,0 +1,157 @@
+:root {
+  --bg: #08080b;
+  --bg-elevated: #131318;
+  --bg-elevated-2: #1b1b22;
+  --border: #26262f;
+  --text: #d1d1d8;
+  --text-h: #f5f5f7;
+  --text-muted: #8b8b98;
+  --accent: #a855f7;
+  --accent-hover: #9333ea;
+  --accent-bg: rgba(168, 85, 247, 0.12);
+  --accent-border: rgba(168, 85, 247, 0.45);
+  --code-bg: #0e0e13;
+  --danger: #f87171;
+  --shadow: rgba(0, 0, 0, 0.5) 0 10px 25px -5px, rgba(0, 0, 0, 0.3) 0 8px 10px -6px;
+
+  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, Consolas, 'SFMono-Regular', monospace;
+
+  font: 16px/1.5 var(--sans);
+  letter-spacing: 0.1px;
+  color-scheme: dark;
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  /* red de seguridad: nada debería poder empujar la pagina de lado */
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+/* Utilidad clave para el bug de "los datos se van de la pagina": los hijos
+   de un flex container tienen min-width:auto por defecto, asi que un <pre>
+   ancho estira todo el layout en vez de scrollear dentro de su propia caja. */
+.flex-min-w-0 {
+  min-width: 0;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--heading);
+  font-weight: 600;
+  color: var(--text-h);
+  margin: 0 0 8px;
+}
+
+h1 {
+  font-size: 32px;
+  letter-spacing: -0.5px;
+}
+
+h2 {
+  font-size: 22px;
+}
+
+p {
+  color: var(--text-muted);
+  margin: 0 0 16px;
+}
+
+a {
+  color: var(--accent);
+}
+
+code {
+  font-family: var(--mono);
+  background: var(--code-bg);
+  color: var(--text-h);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+/* --- Overrides de Bootstrap: por defecto trae inputs/alerts con fondo
+   claro, hay que oscurecerlos para que calcen con el resto de la app --- */
+.form-control {
+  background-color: var(--bg-elevated);
+  border-color: var(--border);
+  color: var(--text-h);
+}
+.form-control:focus {
+  background-color: var(--bg-elevated);
+  border-color: var(--accent-border);
+  color: var(--text-h);
+  box-shadow: 0 0 0 0.25rem var(--accent-bg);
+}
+.form-control::placeholder {
+  color: var(--text-muted);
+}
+
+.alert-danger {
+  background-color: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.35);
+  color: var(--danger);
+}
+
+.btn-primary {
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+.btn-primary:disabled {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  opacity: 0.6;
+}
+
+/* Caja para mostrar datos/resultados (ej: JSON de una API). Vive en su
+   propia caja con scroll horizontal propio, nunca desborda la pagina. */
+.data-box {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  max-width: 100%;
+  max-height: 60vh;
+  overflow: auto;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: #c9d1d9;
+  white-space: pre;
+}
+
+.card-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
