@@ -6,8 +6,22 @@ function Licitacion() {
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
 
+    const [licitaciones, setLicitaciones] = useState([]);
+    const [expandedLicitaciones, setExpandedLicitaciones] = useState({});
+    const [listLoading, setListLoading] = useState(false);
+
     useEffect(() => {
         document.title = "Consulta Licitación";
+    }, []);
+
+    // Igual que en Compra Ágil: refresca sola la lista de "últimas 8 horas"
+    // cada 10 minutos, sin que el usuario tenga que volver a apretar el botón.
+    useEffect(() => {
+        const id = setInterval(() => {
+            obtenerTodasLicitaciones();
+        }, 10 * 60 * 1000); // cada 10 minutos
+
+        return () => clearInterval(id);
     }, []);
 
     async function handleSubmit(e) {
@@ -33,6 +47,30 @@ function Licitacion() {
         }
     }
 
+    async function obtenerTodasLicitaciones() {
+        setListLoading(true);
+        setError(null);
+        try {
+            const res = await fetch(`/compra/licitacion/listar`);
+            if (!res.ok) {
+                throw new Error(`El servidor respondió con estado ${res.status}`);
+            }
+            const json = await res.json();
+            setLicitaciones(json?.Listado || []);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setListLoading(false);
+        }
+    }
+
+    function toggleLicitacionCard(codigoExterno) {
+        setExpandedLicitaciones((prev) => ({
+            ...prev,
+            [codigoExterno]: !prev[codigoExterno],
+        }));
+    }
+
     return (
         <div className="flex-min-w-0">
             <h1>Consulta Licitación</h1>
@@ -51,6 +89,59 @@ function Licitacion() {
                     {loading ? "Buscando..." : "Buscar"}
                 </button>
             </form>
+
+            <div className="d-flex gap-2 mb-3">
+                <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={obtenerTodasLicitaciones}
+                    disabled={listLoading}
+                >
+                    {listLoading ? "Cargando licitaciones..." : "Mostrar licitaciones de las últimas 8 horas"}
+                </button>
+            </div>
+
+            {licitaciones.length > 0 && (
+                <div className="w-100 mb-4">
+                    <h5>Licitaciones encontradas</h5>
+                    <div className="d-flex flex-column gap-3">
+                        {licitaciones.map((item) => (
+                            <div key={item.CodigoExterno} className="card border mb-2">
+                                <div className="card-body p-3">
+                                    <div className="d-flex justify-content-between align-items-start gap-3">
+                                        <div>
+                                            <h6 className="mb-1">{item.CodigoExterno} - {item.Nombre}</h6>
+                                            <p className="mb-1 text-muted">
+                                                {item.Estado || "Sin estado"} · {item.Comprador?.NombreOrganismo || "Sin organismo"}
+                                            </p>
+                                            <p className="mb-0 text-secondary" style={{ fontSize: "0.9rem" }}>
+                                                Publicación: {item.Fechas?.FechaPublicacion || "-"} · Cierre: {item.Fechas?.FechaCierre || "-"} · Monto: {item.MontoEstimado ?? "-"} {item.Moneda || ""}
+                                            </p>
+                                        </div>
+                                        <div className="d-flex gap-2">
+                                            <button
+                                                type="button"
+                                                className="btn btn-sm btn-outline-primary"
+                                                onClick={() => toggleLicitacionCard(item.CodigoExterno)}
+                                            >
+                                                {expandedLicitaciones[item.CodigoExterno] ? "Ocultar" : "Ver más"}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {expandedLicitaciones[item.CodigoExterno] && (
+                                        <div className="mt-3 border-top pt-3">
+                                            <pre className="mb-0" style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", fontSize: "0.9rem" }}>
+                                                {JSON.stringify(item, null, 2)}
+                                            </pre>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {error && (
                 <div className="alert alert-danger" role="alert">

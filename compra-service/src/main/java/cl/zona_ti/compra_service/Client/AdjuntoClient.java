@@ -33,8 +33,9 @@ public class AdjuntoClient {
         // del SimpleClientHttpRequestFactory clasico, porque este ultimo tiene un
         // bug conocido con servidores que piden renegociacion TLS a mitad de la
         // conexion (justo lo que hace adjunto.mercadopublico.cl), y se queda
-        // colgado indefinidamente en vez de completar el handshake.
+        // colgado indefinidamente en vez de completar el handshake .
         HttpClient jdkHttpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
 

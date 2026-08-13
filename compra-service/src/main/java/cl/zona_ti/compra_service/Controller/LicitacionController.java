@@ -32,4 +32,11 @@ public class LicitacionController {
     public ResponseEntity<LicitacionResponse> getLicitacionesPorFecha(@RequestParam String fecha) {
         return ResponseEntity.ok(licitacionService.getLicitacionesPorFecha(fecha));
     }
+
+    //Traer las licitaciones de las ultimas 8 horas
+    @GetMapping("/listar")
+    public ResponseEntity<LicitacionResponse> listarUltimasOchoHoras() {
+        return ResponseEntity.ok(licitacionService.listarUltimasOchoHoras());
+    }
+
 }
