@@ -69,6 +69,7 @@ public class LicitacionAttachmentScraper {
 
         HttpClient client = HttpClient.newBuilder()
                 .cookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ALL))
+                .followRedirects(HttpClient.Redirect.NORMAL)
                 .connectTimeout(Duration.ofSeconds(15))
                 .build();
 
@@ -81,8 +82,11 @@ public class LicitacionAttachmentScraper {
         if (!m.find()) {
             throw new IllegalStateException(
                     "No se encontró el botón de adjuntos (imgAdjuntos) en la ficha (" + detailsUrl + "). " +
-                    "Puede que esta licitación no tenga adjuntos, o que el nombre del botón/archivo haya " +
-                    "cambiado -- revisar el HTML real de la página.");
+                    "HTML recibido: " + detailsHtml.length() + " caracteres. " +
+                    "Si ese número es muy chico (unos pocos cientos), probablemente el servidor devolvió " +
+                    "una redirección u otra página corta en vez de la ficha completa. " +
+                    "Si el número es grande pero igual no aparece, puede que esta licitación no tenga " +
+                    "adjuntos, o que el nombre del botón haya cambiado -- revisar el HTML real de la página.");
         }
         // El match puede venir con "../" adelante (ej: "../Attachment/ViewAttachment.aspx?enc=...");
         // lo limpiamos para armar la URL absoluta sin ambigüedad.
