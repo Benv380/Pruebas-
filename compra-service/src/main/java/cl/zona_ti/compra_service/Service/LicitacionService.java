@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ForkJoinPool;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -47,7 +48,7 @@ public class LicitacionService {
     }
 
     public LicitacionResponse getLicitacionByCodigo(String codigo) {
-        Optional<LicitacionEntity> cacheada = licitacionRepository.findById(codigo);
+        Optional<LicitacionEntity> cacheada = licitacionRepository.findByIdConItems(codigo);
         if (cacheada.isPresent() && estaFresca(cacheada.get())) {
             return new LicitacionResponse(1, null, null, List.of(licitacionMapper.toDto(cacheada.get())));
         }
@@ -88,21 +89,38 @@ public class LicitacionService {
 
         LocalDate dia = desde.toLocalDate();
         while (!dia.isAfter(ahora.toLocalDate())) {
-            LicitacionResponse respuesta = licitacionClient.getLicitacionesPorFecha(dia.format(FORMATO_FECHA_API));
-            if (respuesta != null) {
-                ultimaRespuesta = respuesta;
-                if (respuesta.listado() != null) {
-                    candidatas.addAll(respuesta.listado());
+            try {
+                LicitacionResponse respuesta = licitacionClient.getLicitacionesPorFecha(dia.format(FORMATO_FECHA_API));
+                if (respuesta != null) {
+                    ultimaRespuesta = respuesta;
+                    if (respuesta.listado() != null) {
+                        candidatas.addAll(respuesta.listado());
+                    }
                 }
+            } catch (Exception ignored) {
+                // Si falla el listado de un dia puntual no debe tumbar el resto:
+                // se sigue con los demas dias del rango.
             }
             dia = dia.plusDays(1);
         }
 
-        List<Licitacion> filtradas = candidatas.parallelStream()
-                .map(this::obtenerDetalleSeguro)
-                .filter(Objects::nonNull)
-                .filter(lic -> estaDentroDelRango(lic, desde, ahora))
-                .toList();
+        // Se resuelve con un pool propio y acotado (no el parallelStream()
+        // directo sobre el common ForkJoinPool): un dia normal trae cientos de
+        // candidatas (ej. 376 hoy) y dispararlas todas a la vez contra la API
+        // de Mercado Publico puede gatillar rate-limiting externo. 8 en
+        // paralelo sigue siendo mucho mas rapido que secuencial sin llegar a
+        // sofocar la API externa ni el pool de conexiones a la BD.
+        List<Licitacion> filtradas;
+        ForkJoinPool poolAcotado = new ForkJoinPool(8);
+        try {
+            filtradas = poolAcotado.submit(() -> candidatas.parallelStream()
+                    .map(this::obtenerDetalleSeguro)
+                    .filter(Objects::nonNull)
+                    .filter(lic -> estaDentroDelRango(lic, desde, ahora))
+                    .toList()).join();
+        } finally {
+            poolAcotado.shutdown();
+        }
 
         return new LicitacionResponse(
                 filtradas.size(),
@@ -116,12 +134,15 @@ public class LicitacionService {
     // Si la API falla para un codigo puntual no debe tumbar el listado completo,
     // simplemente se descarta esa licitacion.
     private Licitacion obtenerDetalleSeguro(Licitacion resumen) {
-        Optional<LicitacionEntity> cacheada = licitacionRepository.findById(resumen.codigoExterno());
-        if (cacheada.isPresent() && estaFresca(cacheada.get())) {
-            return licitacionMapper.toDto(cacheada.get());
-        }
-
+        // Todo el metodo va dentro de un unico try/catch: corre en hilos del
+        // ForkJoinPool (parallelStream), asi que cualquier falla puntual (DB,
+        // API externa, mapeo) no debe tumbar el resto del listado.
         try {
+            Optional<LicitacionEntity> cacheada = licitacionRepository.findByIdConItems(resumen.codigoExterno());
+            if (cacheada.isPresent() && estaFresca(cacheada.get())) {
+                return licitacionMapper.toDto(cacheada.get());
+            }
+
             LicitacionResponse detalle = licitacionClient.getLicitacionByCodigo(resumen.codigoExterno());
             if (detalle != null && detalle.listado() != null && !detalle.listado().isEmpty()) {
                 Licitacion licitacion = detalle.listado().get(0);
