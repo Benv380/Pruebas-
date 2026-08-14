@@ -91,19 +91,31 @@ public class LicitacionAttachmentScraper {
         // El match puede venir con "../" adelante (ej: "../Attachment/ViewAttachment.aspx?enc=...");
         // lo limpiamos para armar la URL absoluta sin ambigüedad.
         String attachmentPath = m.group().replace("&amp;", "&").replaceFirst("^(\\.\\./)+", "");
+        String routerUrl = BASE + "/Procurement/Modules/" + attachmentPath;
 
-        // "ViewAttachment.aspx" es solo una página "enrutadora" que redirige (por JS, no HTTP)
-        // hacia "ViewAttachmentLC.aspx" con el mismo enc -- vamos directo a esa para no depender
-        // de que se ejecute ningún JavaScript.
-        if (!attachmentPath.contains("ViewAttachmentLC")) {
-            attachmentPath = attachmentPath.replace("ViewAttachment.aspx", "ViewAttachmentLC.aspx");
+        // La URL final (con ViewAttachmentLC) usa el mismo enc que la "enrutadora".
+        String finalPath = attachmentPath.contains("ViewAttachmentLC")
+                ? attachmentPath
+                : attachmentPath.replace("ViewAttachment.aspx", "ViewAttachmentLC.aspx");
+        String attachmentUrl = BASE + "/Procurement/Modules/" + finalPath;
+
+        // Intento 1: pasar primero por la página "enrutadora" (ViewAttachment.aspx) antes de
+        // pedir la final (ViewAttachmentLC.aspx), con la misma sesión/cookies -- por si el sitio
+        // exige ese paso intermedio para no bloquear la petición como bot.
+        if (!routerUrl.equals(attachmentUrl)) {
+            get(client, routerUrl, detailsUrl);
         }
 
-        String attachmentUrl = BASE + "/Procurement/Modules/" + attachmentPath;
-
         // 2) Página de adjuntos -> parsear filas y campos ocultos del formulario
-        String listHtml = get(client, attachmentUrl, detailsUrl);
+        String listHtml = get(client, attachmentUrl, routerUrl.equals(attachmentUrl) ? detailsUrl : routerUrl);
         Document doc = Jsoup.parse(listHtml, attachmentUrl);
+
+        // Guardamos SIEMPRE una copia del HTML real recibido, pase lo que pase después.
+        // Así, si algo falla más abajo (tabla no encontrada, filas sin link de descarga,
+        // etc.), siempre vamos a tener evidencia real para diagnosticar sin adivinar.
+        Files.createDirectories(Path.of(outputDir));
+        Path debugFile = Path.of(outputDir, "debug_adjuntos.html");
+        Files.writeString(debugFile, listHtml);
 
         Map<String, String> hiddenFields = new LinkedHashMap<>();
         for (Element input : doc.select("input[type=hidden]")) {
@@ -114,22 +126,17 @@ public class LicitacionAttachmentScraper {
         }
 
         // OJO: el selector de la tabla es una suposición basada en el nombre "grdId"
-        // que vimos en el __VIEWSTATE capturado. Si no encuentra filas, se guarda el
-        // HTML real recibido en outputDir/debug_adjuntos.html para poder inspeccionarlo.
+        // que vimos en el __VIEWSTATE capturado -- revisar debugFile si no calza.
         Elements rows = doc.select("table[id*=grdId] tr, table[id*=DWNL] tr");
 
         if (rows.isEmpty()) {
-            Files.createDirectories(Path.of(outputDir));
-            Path debugFile = Path.of(outputDir, "debug_adjuntos.html");
-            Files.writeString(debugFile, listHtml);
             throw new IllegalStateException(
                     "No se encontraron filas de adjuntos en " + attachmentUrl + ". " +
-                    "Guardé el HTML real recibido en: " + debugFile.toAbsolutePath() +
-                    " -- ábrelo para ver la estructura real de la tabla y ajustar el selector.");
+                    "Revisa el HTML real recibido en: " + debugFile.toAbsolutePath() +
+                    " para ajustar el selector de la tabla.");
         }
 
         List<AttachmentFile> resultados = new ArrayList<>();
-        Files.createDirectories(Path.of(outputDir));
 
         int index = 0;
         for (Element row : rows) {
@@ -157,8 +164,9 @@ public class LicitacionAttachmentScraper {
 
         if (resultados.isEmpty()) {
             throw new IllegalStateException(
-                    "No se encontraron filas de adjuntos en " + attachmentUrl + ". " +
-                    "Revisa el selector de tabla contra el HTML real de esa página.");
+                    "Se encontró la tabla (" + rows.size() + " filas) pero ninguna tenía el link " +
+                    "de descarga esperado (a[href*=__doPostBack]). Revisa el HTML real en: " +
+                    debugFile.toAbsolutePath() + " para ajustar cómo se detecta el link de cada fila.");
         }
 
         return resultados;
