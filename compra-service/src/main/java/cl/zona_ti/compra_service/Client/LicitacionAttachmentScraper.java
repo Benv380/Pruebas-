@@ -91,6 +91,14 @@ public class LicitacionAttachmentScraper {
         // El match puede venir con "../" adelante (ej: "../Attachment/ViewAttachment.aspx?enc=...");
         // lo limpiamos para armar la URL absoluta sin ambigüedad.
         String attachmentPath = m.group().replace("&amp;", "&").replaceFirst("^(\\.\\./)+", "");
+
+        // "ViewAttachment.aspx" es solo una página "enrutadora" que redirige (por JS, no HTTP)
+        // hacia "ViewAttachmentLC.aspx" con el mismo enc -- vamos directo a esa para no depender
+        // de que se ejecute ningún JavaScript.
+        if (!attachmentPath.contains("ViewAttachmentLC")) {
+            attachmentPath = attachmentPath.replace("ViewAttachment.aspx", "ViewAttachmentLC.aspx");
+        }
+
         String attachmentUrl = BASE + "/Procurement/Modules/" + attachmentPath;
 
         // 2) Página de adjuntos -> parsear filas y campos ocultos del formulario
@@ -106,9 +114,19 @@ public class LicitacionAttachmentScraper {
         }
 
         // OJO: el selector de la tabla es una suposición basada en el nombre "grdId"
-        // que vimos en el __VIEWSTATE capturado. Si no encuentra filas, imprime
-        // `listHtml` a un archivo y ajusta este selector según el HTML real.
+        // que vimos en el __VIEWSTATE capturado. Si no encuentra filas, se guarda el
+        // HTML real recibido en outputDir/debug_adjuntos.html para poder inspeccionarlo.
         Elements rows = doc.select("table[id*=grdId] tr, table[id*=DWNL] tr");
+
+        if (rows.isEmpty()) {
+            Files.createDirectories(Path.of(outputDir));
+            Path debugFile = Path.of(outputDir, "debug_adjuntos.html");
+            Files.writeString(debugFile, listHtml);
+            throw new IllegalStateException(
+                    "No se encontraron filas de adjuntos en " + attachmentUrl + ". " +
+                    "Guardé el HTML real recibido en: " + debugFile.toAbsolutePath() +
+                    " -- ábrelo para ver la estructura real de la tabla y ajustar el selector.");
+        }
 
         List<AttachmentFile> resultados = new ArrayList<>();
         Files.createDirectories(Path.of(outputDir));
