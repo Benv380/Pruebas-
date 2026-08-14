@@ -101,4 +101,9 @@ public class LicitacionDto {
             @JsonProperty("UnidadMedida") String unidadMedida,
             @JsonProperty("Cantidad") Double cantidad) {
     }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Reclamo(
+            @JsonProperty("CantidadReclamos") Integer cantidadReclamos) {
+    }
 }
