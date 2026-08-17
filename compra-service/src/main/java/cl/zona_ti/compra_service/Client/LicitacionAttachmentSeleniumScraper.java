@@ -81,9 +81,23 @@ public class LicitacionAttachmentSeleniumScraper {
 
             // Esperar a que la tabla de adjuntos cargue. Igual que en el scraper HTTP,
             // el id exacto de la tabla (GridView de ASP.NET) puede variar -- si esto
-            // falla, hay que revisar el HTML real con driver.getPageSource() en debug.
-            wait.until(ExpectedConditions.presenceOfElementLocated(
-                    By.cssSelector("table[id*=grdId], table[id*=DWNL], table[id*=GridView]")));
+            // falla, volcamos el HTML real recibido a disco para poder ajustar el
+            // selector sin tener que adivinar (antes esto siempre estaba bloqueado
+            // por el anti-bot, nunca pudimos confirmarlo contra HTML real).
+            try {
+                wait.until(ExpectedConditions.presenceOfElementLocated(
+                        By.cssSelector("table[id*=grdId], table[id*=DWNL], table[id*=GridView]")));
+            } catch (Exception e) {
+                Path debugFile = downloadDir.resolve("debug_ventana_adjuntos_" + codigoLicitacion + ".html");
+                try {
+                    Files.writeString(debugFile, driver.getPageSource());
+                } catch (IOException ioEx) {
+                    // si ni siquiera se pudo escribir el debug, seguimos con el error original
+                }
+                throw new IllegalStateException(
+                        "No se encontró la tabla de adjuntos para " + codigoLicitacion
+                        + ". HTML real volcado en: " + debugFile.toAbsolutePath(), e);
+            }
 
             List<WebElement> filas = driver.findElements(
                     By.cssSelector("table[id*=grdId] tr, table[id*=DWNL] tr, table[id*=GridView] tr"));
@@ -144,12 +158,19 @@ public class LicitacionAttachmentSeleniumScraper {
             options.setBinary(chromeBin);
         }
         options.addArguments(
-                "--headless=new",
+                // SIN --headless: corre con interfaz gráfica real sobre el display
+                // virtual (Xvfb) que levanta entrypoint.sh -- el modo headless dejaba
+                // huellas detectables (fingerprint de renderizado, plugins ausentes,
+                // etc.) que el anti-bot del sitio bloqueaba pese a enmascarar
+                // navigator.webdriver.
                 "--no-sandbox",
                 "--disable-dev-shm-usage",
-                "--disable-gpu",
-                "--window-size=1920,1080"
+                "--window-size=1920,1080",
+                "--disable-blink-features=AutomationControlled",
+                "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
         );
+        options.setExperimentalOption("excludeSwitches", new String[]{"enable-automation"});
+        options.setExperimentalOption("useAutomationExtension", false);
 
         Map<String, Object> prefs = new HashMap<>();
         prefs.put("download.default_directory", downloadDir.toAbsolutePath().toString());
@@ -157,7 +178,16 @@ public class LicitacionAttachmentSeleniumScraper {
         prefs.put("plugins.always_open_pdf_externally", true);
         options.setExperimentalOption("prefs", prefs);
 
-        return new ChromeDriver(options);
+        ChromeDriver driver = new ChromeDriver(options);
+
+        // Refuerzo extra: sobreescribe navigator.webdriver ANTES de que cargue
+        // cualquier página (se re-ejecuta en cada navegación/documento nuevo),
+        // para que el JS del sitio no pueda leerlo como "true".
+        driver.executeCdpCommand("Page.addScriptToEvaluateOnNewDocument", Map.of(
+                "source", "Object.defineProperty(navigator, 'webdriver', { get: () => undefined });"
+        ));
+
+        return driver;
     }
 
     private long contarArchivos(Path dir) throws IOException {
