@@ -2,6 +2,7 @@ C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\com
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Client\AuthClient.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Client\CompraAgilClient.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Client\LicitacionAttachmentScraper.java
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Client\LicitacionAttachmentSeleniumScraper.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Client\LicitacionClient.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\CompraServiceApplication.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Controller\AdjuntoController.java
@@ -28,6 +29,7 @@ C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\com
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Repository\AdjuntoRepository.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Repository\CompraAgilRepository.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Repository\LicitacionRepository.java
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Scheduler\LicitacionSyncScheduler.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Security\SecurityConfig.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Service\AdjuntoService.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Service\CompraAgilService.java
