@@ -51,12 +51,13 @@ public class LicitacionSyncScheduler {
     @Value("${compra-service.licitaciones.storage-dir:/data/adjuntos-licitaciones}")
     private String storageDir;
 
-    // Mismo endpoint público que ya usás en LicitacionController para
-    // "últimas 8 horas" -- ajustar la URL si tu controller usa otro parámetro.
-    @Value("${compra-service.licitaciones.api-url:https://api.mercadopublico.cl/servicios/v1/publico/licitaciones.json}")
-    private String apiUrl;
+    // Reutiliza exactamente la misma URL base y ticket que ya usás para
+    // Licitaciones en Compra Ágil/LicitacionController (application.yml:
+    // mercado-publico.licitacion.*) -- no hay un ticket nuevo que gestionar.
+    @Value("${mercado-publico.licitacion.url}")
+    private String apiUrlBase;
 
-    @Value("${compra-service.licitaciones.ticket}")
+    @Value("${mercado-publico.licitacion.ticket}")
     private String apiTicket;
 
     public LicitacionSyncScheduler(LicitacionAttachmentSeleniumScraper scraper,
@@ -131,7 +132,11 @@ public class LicitacionSyncScheduler {
 
     private List<String> obtenerCodigosLicitacionesRecientes() {
         try {
-            String url = apiUrl + "?ticket=" + apiTicket + "&fecha=" + fechaHoyDDMMYYYY();
+            // OJO: armado genérico (base + /licitaciones.json?ticket=...&fecha=DDMMYYYY).
+            // Si tu LicitacionController arma esta URL distinto (otro endpoint, otro
+            // parámetro tipo "estado" o "codigo"), hay que calcarlo acá para no
+            // duplicar dos formas distintas de llamar a la misma API.
+            String url = apiUrlBase + "/licitaciones.json?ticket=" + apiTicket + "&fecha=" + fechaHoyDDMMYYYY();
             Map<String, Object> respuesta = restTemplate.getForObject(url, Map.class);
             if (respuesta == null || !(respuesta.get("Listado") instanceof List<?> listado)) {
                 return List.of();
