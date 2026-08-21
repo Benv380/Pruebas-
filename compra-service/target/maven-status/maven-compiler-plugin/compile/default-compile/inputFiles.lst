@@ -1,10 +1,10 @@
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Client\AdjuntoClient.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Client\AuthClient.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Client\CompraAgilClient.java
-C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Client\LicitacionAttachmentScraper.java
-C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Client\LicitacionAttachmentSeleniumScraper.java
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Client\LicitacionAttachmentPythonScraper.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Client\LicitacionClient.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\CompraServiceApplication.java
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Config\AppConfig.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Controller\AdjuntoController.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Controller\CompraAgilController.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Controller\LicitacionAttachmentController.java
@@ -14,6 +14,7 @@ C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\com
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Dto\AuthDto.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Dto\CompraAgilDto.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Dto\LicitacionDto.java
+C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\EneableScheduling.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Mapper\CompraAgilMapper.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Mapper\LicitacionMapper.java
 C:\Users\Bnv-note\Desktop\Api-Prueba\compra-service\src\main\java\cl\zona_ti\compra_service\Model\AdjuntoEntity.java

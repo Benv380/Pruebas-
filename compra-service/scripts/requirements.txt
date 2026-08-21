@@ -1,0 +1,10 @@
+# Dependencias del script de descarga de adjuntos (descargar_adjuntos.py).
+#
+# Instalar con:
+#   pip install -r requirements.txt
+#   playwright install chromium
+#
+# El "playwright install chromium" descarga el binario del navegador; no lo
+# instala pip solo, por eso es un paso aparte.
+
+playwright

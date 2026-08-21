@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,6 +17,10 @@ import lombok.Setter;
  * Representa, en base de datos, un adjunto ya descargado de una licitación
  * normal (LS/LP/LE). Es el equivalente de AdjuntoEntity pero para el flujo
  * de licitaciones (scraping) en vez de Compra Ágil (API REST).
+ *
+ * El binario queda completo en "contenido": no hay copia en disco, la BD es
+ * la única fuente de verdad (a diferencia de la versión anterior, que
+ * guardaba solo la ruta a un archivo en disco).
  */
 @Entity
 @Table(name = "adjunto_licitacion")
@@ -31,7 +36,11 @@ public class AdjuntoLicitacionEntity {
 
     private String codigoLicitacion;   // ej: "2378-71-LS26"
     private String nombreArchivo;      // nombre original del archivo
-    private String rutaArchivo;        // dónde quedó guardado en disco/storage
+    private String tipoContenido;      // MIME type, ej: "application/pdf"
     private Integer tamanoBytes;
+
+    @Lob
+    private byte[] contenido;          // binario completo del archivo
+
     private LocalDateTime fechaSync;
 }

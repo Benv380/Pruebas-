@@ -2,36 +2,41 @@ package cl.zona_ti.compra_service.Scheduler;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 
-import cl.zona_ti.compra_service.Client.LicitacionAttachmentSeleniumScraper;
-import cl.zona_ti.compra_service.Client.LicitacionAttachmentSeleniumScraper.AttachmentFile;
+import cl.zona_ti.compra_service.Client.LicitacionAttachmentPythonScraper;
+import cl.zona_ti.compra_service.Client.LicitacionAttachmentPythonScraper.AttachmentFile;
+import cl.zona_ti.compra_service.Dto.LicitacionDto.Licitacion;
+import cl.zona_ti.compra_service.Dto.LicitacionDto.LicitacionResponse;
 import cl.zona_ti.compra_service.Model.AdjuntoLicitacionEntity;
 import cl.zona_ti.compra_service.Repository.AdjuntoLicitacionRepository;
+import cl.zona_ti.compra_service.Service.LicitacionService;
 import jakarta.annotation.PreDestroy;
 
 /**
- * Cada 10 minutos:
- *  1) Pregunta a la API pública de mercadopublico.cl qué licitaciones hay
- *     (mismo endpoint que ya usa LicitacionController).
- *  2) Compara contra lo que ya tenemos sincronizado en adjunto_licitacion.
- *  3) Si hay licitaciones nuevas (o vencidas según el TTL), las encola en un
- *     pool fijo de 2 Chromes headless en paralelo -- así nunca se abren más
- *     de 2 instancias de Selenium al mismo tiempo, sin importar cuántas
+ * Cada X minutos (compra-service.sync.fixed-delay):
+ *  1) Pide a LicitacionService las licitaciones recientes -- mismo método
+ *     que ya usa el frontend (GET /compra/licitacion/listar), que a su vez
+ *     consulta la API pública de Mercado Público y guarda cada licitación
+ *     en la tabla "licitaciones" (cache). Acá NO se duplica esa llamada a
+ *     mano: se reutiliza tal cual.
+ *  2) Para cada código, revisa si ya hay adjuntos guardados en
+ *     adjunto_licitacion. Los documentos de una licitación no cambian una
+ *     vez publicados, así que "ya existe" es suficiente -- no hay TTL acá.
+ *  3) Las licitaciones sin adjuntos se encolan en un pool fijo de 2
+ *     descargas Python (Playwright) en paralelo -- así nunca se abren más
+ *     de 2 ventanas de Chromium al mismo tiempo, sin importar cuántas
  *     licitaciones nuevas aparezcan en un ciclo.
  *
- * Si no hay nada nuevo, el ciclo no toca Selenium para nada -- el costo caro
- * (Chrome headless) solo se paga cuando realmente hace falta.
+ * Si no hay nada pendiente, el ciclo no toca Python para nada -- el costo
+ * caro (levantar Chromium) solo se paga cuando realmente hace falta.
  */
 @Component
 public class LicitacionSyncScheduler {
@@ -40,39 +45,24 @@ public class LicitacionSyncScheduler {
 
     private static final int POOL_SIZE = 2;
 
-    private final LicitacionAttachmentSeleniumScraper scraper;
+    private final LicitacionAttachmentPythonScraper scraper;
     private final AdjuntoLicitacionRepository repository;
-    private final RestTemplate restTemplate;
+    private final LicitacionService licitacionService;
     private final ExecutorService pool = Executors.newFixedThreadPool(POOL_SIZE);
 
-    @Value("${compra-service.cache.ttl-minutos:10}")
-    private long ttlMinutos;
-
-    @Value("${compra-service.licitaciones.storage-dir:/data/adjuntos-licitaciones}")
-    private String storageDir;
-
-    // Reutiliza exactamente la misma URL base y ticket que ya usás para
-    // Licitaciones en Compra Ágil/LicitacionController (application.yml:
-    // mercado-publico.licitacion.*) -- no hay un ticket nuevo que gestionar.
-    @Value("${mercado-publico.licitacion.url}")
-    private String apiUrlBase;
-
-    @Value("${mercado-publico.licitacion.ticket}")
-    private String apiTicket;
-
-    public LicitacionSyncScheduler(LicitacionAttachmentSeleniumScraper scraper,
+    public LicitacionSyncScheduler(LicitacionAttachmentPythonScraper scraper,
                                     AdjuntoLicitacionRepository repository,
-                                    RestTemplate restTemplate) {
+                                    LicitacionService licitacionService) {
         this.scraper = scraper;
         this.repository = repository;
-        this.restTemplate = restTemplate;
+        this.licitacionService = licitacionService;
     }
 
-    @Scheduled(fixedDelayString = "PT10M")
+    @Scheduled(fixedDelayString = "${compra-service.sync.fixed-delay:PT10M}")
     public void sincronizarAdjuntos() {
         List<String> codigosDelPeriodo = obtenerCodigosLicitacionesRecientes();
         if (codigosDelPeriodo.isEmpty()) {
-            log.debug("Sync adjuntos: la API pública no devolvió licitaciones en este ciclo.");
+            log.debug("Sync adjuntos: no hay licitaciones recientes en este ciclo.");
             return;
         }
 
@@ -93,28 +83,24 @@ public class LicitacionSyncScheduler {
         }
     }
 
+    // "Ya existe" = ya tiene al menos un adjunto guardado. Sin TTL: los
+    // documentos de una licitación publicada no cambian.
     private boolean necesitaSincronizar(String codigo) {
-        List<AdjuntoLicitacionEntity> cacheados = repository.findByCodigoLicitacion(codigo);
-        if (cacheados.isEmpty()) return true;
-
-        LocalDateTime limite = LocalDateTime.now().minusMinutes(ttlMinutos);
-        return cacheados.stream().anyMatch(e -> e.getFechaSync() == null || e.getFechaSync().isBefore(limite));
+        return repository.findByCodigoLicitacion(codigo).isEmpty();
     }
 
     private void descargarYGuardar(String codigo) {
         try {
-            String carpeta = storageDir + "/" + sanitize(codigo);
-            List<AttachmentFile> archivos = scraper.descargarAdjuntos(codigo, carpeta);
-
-            repository.deleteAll(repository.findByCodigoLicitacion(codigo));
+            List<AttachmentFile> archivos = scraper.descargarAdjuntos(codigo);
 
             LocalDateTime ahora = LocalDateTime.now();
             List<AdjuntoLicitacionEntity> nuevos = archivos.stream().map(a -> {
                 AdjuntoLicitacionEntity e = new AdjuntoLicitacionEntity();
                 e.setCodigoLicitacion(codigo);
                 e.setNombreArchivo(a.nombre());
-                e.setRutaArchivo(a.rutaLocal());
-                e.setTamanoBytes((int) a.tamanoBytes());
+                e.setContenido(a.contenido());
+                e.setTipoContenido(a.tipoContenido());
+                e.setTamanoBytes(a.tamanoBytes());
                 e.setFechaSync(ahora);
                 return e;
             }).toList();
@@ -132,35 +118,18 @@ public class LicitacionSyncScheduler {
 
     private List<String> obtenerCodigosLicitacionesRecientes() {
         try {
-            // OJO: armado genérico (base + /licitaciones.json?ticket=...&fecha=DDMMYYYY).
-            // Si tu LicitacionController arma esta URL distinto (otro endpoint, otro
-            // parámetro tipo "estado" o "codigo"), hay que calcarlo acá para no
-            // duplicar dos formas distintas de llamar a la misma API.
-            String url = apiUrlBase + "/licitaciones.json?ticket=" + apiTicket + "&fecha=" + fechaHoyDDMMYYYY();
-            Map<String, Object> respuesta = restTemplate.getForObject(url, Map.class);
-            if (respuesta == null || !(respuesta.get("Listado") instanceof List<?> listado)) {
+            LicitacionResponse respuesta = licitacionService.listarUltimasOchoHoras();
+            if (respuesta == null || respuesta.listado() == null) {
                 return List.of();
             }
-            return listado.stream()
-                    .filter(item -> item instanceof Map)
-                    .map(item -> (Map<?, ?>) item)
-                    .map(item -> item.get("CodigoExterno"))
-                    .filter(codigo -> codigo != null)
-                    .map(Object::toString)
+            return respuesta.listado().stream()
+                    .map(Licitacion::codigoExterno)
+                    .filter(codigo -> codigo != null && !codigo.isBlank())
                     .toList();
         } catch (Exception e) {
-            log.warn("No se pudo consultar la API pública de licitaciones: {}", e.getMessage());
+            log.warn("No se pudo obtener el listado de licitaciones recientes: {}", e.getMessage());
             return List.of();
         }
-    }
-
-    private String fechaHoyDDMMYYYY() {
-        var hoy = java.time.LocalDate.now();
-        return "%02d%02d%04d".formatted(hoy.getDayOfMonth(), hoy.getMonthValue(), hoy.getYear());
-    }
-
-    private String sanitize(String value) {
-        return value.replaceAll("[\\\\/:*?\"<>|]", "_");
     }
 
     @PreDestroy

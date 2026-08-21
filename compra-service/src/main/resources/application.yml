@@ -35,6 +35,27 @@ compra-service:
     # Minutos que se considera "fresca" una fila cacheada (licitaciones,
     # compras agiles, adjuntos) antes de volver a pedirla a Mercado Publico.
     ttl-minutos: 10
+  sync:
+    # Cada cuanto corre LicitacionSyncScheduler (formato ISO-8601 Duration).
+    fixed-delay: PT10M
+  python:
+    # Comando que lanza scripts/descargar_adjuntos.py (Playwright), separado
+    # por comas -- cada elemento es un argv, en orden, ANTES del script.
+    #
+    # Default (dev en Windows con escritorio real): "python".
+    #
+    # El script fuerza headless=False a propósito (mercadopublico.cl
+    # bloquea Chrome headless), así que Chromium necesita una pantalla real
+    # para dibujarse. En una VM Linux SIN escritorio (headless) hay que
+    # anteponerle un display virtual con Xvfb, ej. (requiere
+    # "apt install xvfb" y que playwright esté con "python3"):
+    #   command-prefix: "xvfb-run,-a,--server-args=-screen 0 1920x1080x24,python3"
+    command-prefix: python
+    # Path del script, relativo al working directory con el que se levanta
+    # la app (compra-service/, si se corre con "mvn spring-boot:run" desde
+    # ahí) -- o un path absoluto si el jar se lanza desde otro lado.
+    script-path: scripts/descargar_adjuntos.py
+    timeout-seconds: 90
 
 mercado-publico:
   licitacion:

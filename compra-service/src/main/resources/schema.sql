@@ -232,3 +232,20 @@ CREATE TABLE IF NOT EXISTS adjuntos (
     fecha_sync          TIMESTAMP NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_adjuntos_compra_agil_codigo ON adjuntos (compra_agil_codigo);
+
+-- Adjuntos de licitaciones normales (LS/LP/LE), bajados por
+-- LicitacionAttachmentPythonScraper (script Playwright) y orquestados por
+-- LicitacionSyncScheduler. A diferencia de "adjuntos" (Compra Agil, que
+-- proxea el binario desde la API externa en cada descarga), acá el binario
+-- se guarda completo en "contenido": no hay copia en disco, la BD es la
+-- unica fuente de verdad.
+CREATE TABLE IF NOT EXISTS adjunto_licitacion (
+    id                  BIGSERIAL PRIMARY KEY,
+    codigo_licitacion   VARCHAR(50) NOT NULL REFERENCES licitaciones (codigo_externo) ON DELETE CASCADE,
+    nombre_archivo      TEXT NOT NULL,
+    tipo_contenido      VARCHAR(150),
+    tamano_bytes        INTEGER,
+    contenido           BYTEA NOT NULL,
+    fecha_sync          TIMESTAMP NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_adjunto_licitacion_codigo ON adjunto_licitacion (codigo_licitacion);

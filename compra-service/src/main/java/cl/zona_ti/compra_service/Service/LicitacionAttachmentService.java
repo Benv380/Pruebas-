@@ -1,8 +1,5 @@
 package cl.zona_ti.compra_service.Service;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -20,10 +17,10 @@ import cl.zona_ti.compra_service.Repository.AdjuntoLicitacionRepository;
 /**
  * Capa de lectura de adjuntos de licitaciones normales (LS/LP/LE).
  *
- * A diferencia de la versión anterior, esta clase YA NO dispara scraping/Selenium
- * cuando el usuario pide los adjuntos -- eso ahora lo hace exclusivamente
- * LicitacionSyncScheduler en background, cada 10 minutos. Este servicio solo
- * lee lo que ya quedó guardado en la base y en disco.
+ * Esta clase NO dispara scraping cuando el usuario pide los adjuntos -- eso
+ * lo hace exclusivamente LicitacionSyncScheduler en background. Este
+ * servicio solo lee lo que ya quedó guardado en la base (el binario
+ * completo vive en la columna "contenido", no hay archivos en disco).
  *
  * Mismo formato de respuesta que AdjuntoService (Compra Ágil): { success, payload: { files } },
  * para que el frontend trate ambos casos igual.
@@ -38,12 +35,7 @@ public class LicitacionAttachmentService {
     }
 
     public AdjuntoLicitacionListadoResponse listar(String codigoLicitacion) {
-        List<AdjuntoLicitacionEntity> entidades = repository.findByCodigoLicitacion(codigoLicitacion);
-
-        List<AdjuntoLicitacionArchivo> archivos = entidades.stream()
-                .map(e -> new AdjuntoLicitacionArchivo(String.valueOf(e.getId()), e.getNombreArchivo()))
-                .toList();
-
+        List<AdjuntoLicitacionArchivo> archivos = repository.listarPorCodigo(codigoLicitacion);
         return new AdjuntoLicitacionListadoResponse("true", new AdjuntoLicitacionListadoPayload(archivos));
     }
 
@@ -51,27 +43,21 @@ public class LicitacionAttachmentService {
         AdjuntoLicitacionEntity entidad = repository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("No existe el adjunto con id " + id));
 
-        Path ruta = Path.of(entidad.getRutaArchivo());
-        byte[] contenido;
-        try {
-            contenido = Files.readAllBytes(ruta);
-        } catch (IOException e) {
-            // Si el archivo desapareció del disco (ej: se borró el volumen) pero el
-            // registro en la base seguía ahí, tratamos esto igual que "no encontrado" --
-            // el próximo ciclo del scheduler lo va a volver a descargar de todas formas.
-            throw new NoSuchElementException(
-                    "El adjunto " + id + " está registrado pero no se pudo leer el archivo en disco (" + ruta + ")");
+        byte[] contenido = entidad.getContenido();
+        if (contenido == null) {
+            throw new NoSuchElementException("El adjunto " + id + " está registrado pero no tiene contenido guardado.");
         }
 
         MediaType tipo;
         try {
-            String probado = Files.probeContentType(ruta);
-            tipo = probado != null ? MediaType.parseMediaType(probado) : MediaType.APPLICATION_OCTET_STREAM;
-        } catch (IOException e) {
+            tipo = entidad.getTipoContenido() != null
+                    ? MediaType.parseMediaType(entidad.getTipoContenido())
+                    : MediaType.APPLICATION_OCTET_STREAM;
+        } catch (Exception e) {
             tipo = MediaType.APPLICATION_OCTET_STREAM;
         }
 
-        String nombreArchivo = entidad.getNombreArchivo() != null ? entidad.getNombreArchivo() : ruta.getFileName().toString();
+        String nombreArchivo = entidad.getNombreArchivo() != null ? entidad.getNombreArchivo() : "adjunto_" + id;
 
         return ResponseEntity.ok()
                 .contentType(tipo)

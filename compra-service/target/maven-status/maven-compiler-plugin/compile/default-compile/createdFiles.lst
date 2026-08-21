@@ -25,7 +25,6 @@ cl\zona_ti\compra_service\Dto\CompraAgilDto$Flags.class
 cl\zona_ti\compra_service\Model\CompraAgilProductoSolicitadoEntity.class
 cl\zona_ti\compra_service\Dto\CompraAgilDto$Resumen.class
 cl\zona_ti\compra_service\Dto\CompraAgilDto$CompraAgilDetalleResponse.class
-cl\zona_ti\compra_service\Client\LicitacionAttachmentSeleniumScraper.class
 cl\zona_ti\compra_service\Dto\CompraAgilDto$Links.class
 cl\zona_ti\compra_service\Dto\AdjuntoDto$AdjuntoArchivo.class
 cl\zona_ti\compra_service\Model\CompraAgilEntity.class
@@ -38,7 +37,6 @@ cl\zona_ti\compra_service\Dto\LicitacionDto$Licitacion.class
 cl\zona_ti\compra_service\Repository\LicitacionRepository.class
 cl\zona_ti\compra_service\Controller\AdjuntoController.class
 cl\zona_ti\compra_service\Dto\AuthDto.class
-cl\zona_ti\compra_service\Client\LicitacionAttachmentSeleniumScraper$AttachmentFile.class
 cl\zona_ti\compra_service\Dto\AuthDto$AuthPublicoPayload.class
 cl\zona_ti\compra_service\Dto\CompraAgilDto$Montos.class
 cl\zona_ti\compra_service\Service\LicitacionService.class
@@ -63,7 +61,6 @@ cl\zona_ti\compra_service\Dto\AdjuntoDto$AdjuntoError.class
 cl\zona_ti\compra_service\Controller\LicitacionAttachmentController.class
 cl\zona_ti\compra_service\Service\AdjuntoService.class
 cl\zona_ti\compra_service\Service\LicitacionAttachmentService.class
-cl\zona_ti\compra_service\Client\LicitacionAttachmentScraper$AttachmentFile.class
 cl\zona_ti\compra_service\Dto\LicitacionDto$Item.class
 cl\zona_ti\compra_service\Mapper\CompraAgilMapper.class
 cl\zona_ti\compra_service\Repository\AdjuntoLicitacionRepository.class
@@ -73,7 +70,6 @@ cl\zona_ti\compra_service\Dto\CompraAgilDto$Convocatoria.class
 cl\zona_ti\compra_service\Dto\AdjuntoDto$AdjuntoListadoResponse.class
 cl\zona_ti\compra_service\Dto\LicitacionDto.class
 cl\zona_ti\compra_service\Dto\CompraAgilDto$Entrega.class
-cl\zona_ti\compra_service\Client\LicitacionAttachmentScraper.class
 cl\zona_ti\compra_service\Dto\AdjuntoLicitacionDto$AdjuntoLicitacionListadoResponse.class
 cl\zona_ti\compra_service\Dto\CompraAgilDto$CompraAgilListadoResponse.class
 cl\zona_ti\compra_service\Dto\LicitacionDto$Fechas.class
