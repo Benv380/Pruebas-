@@ -245,7 +245,16 @@ CREATE TABLE IF NOT EXISTS adjunto_licitacion (
     nombre_archivo      TEXT NOT NULL,
     tipo_contenido      VARCHAR(150),
     tamano_bytes        INTEGER,
-    contenido           BYTEA NOT NULL,
+    contenido           BYTEA,
     fecha_sync          TIMESTAMP NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_adjunto_licitacion_codigo ON adjunto_licitacion (codigo_licitacion);
+
+-- CREATE TABLE IF NOT EXISTS no toca una tabla que ya existe: en instalaciones
+-- previas a este cambio, adjunto_licitacion ya existia con el diseño viejo
+-- (guardaba "ruta_archivo" en vez del binario). Estas columnas se agregan a
+-- mano para que esas instalaciones tambien las reciban (ver comentario
+-- equivalente mas arriba, para "licitaciones"). "ruta_archivo" (si existia)
+-- se deja intacta, ya sin uso -- no se borra para no arriesgar datos.
+ALTER TABLE adjunto_licitacion ADD COLUMN IF NOT EXISTS tipo_contenido VARCHAR(150);
+ALTER TABLE adjunto_licitacion ADD COLUMN IF NOT EXISTS contenido BYTEA;
