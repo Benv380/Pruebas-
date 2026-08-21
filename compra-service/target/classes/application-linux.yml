@@ -1,0 +1,22 @@
+# Config SOLO para cuando compra-service corre en la VM de Azure (Linux,
+# sin escritorio/GUI). Se activa agregando el perfil "linux" al arrancar la
+# app -- no reemplaza a application.yml, solo pisa estos valores puntuales
+# (todo lo demás: BD, TTL, tickets de Mercado Publico, etc. sigue saliendo
+# de application.yml normal).
+#
+# Como activarlo, en la VM (elegir una):
+#   java -jar app.jar --spring.profiles.active=linux
+#   # o, si prefieres variable de entorno:
+#   export SPRING_PROFILES_ACTIVE=linux
+#   java -jar app.jar
+#
+# Requisitos previos en la VM (una sola vez):
+#   sudo apt install -y xvfb python3 python3-pip
+#   pip3 install -r compra-service/scripts/requirements.txt
+#   playwright install --with-deps chromium
+
+compra-service:
+  python:
+    # Antepone xvfb-run (pantalla virtual) antes de python3, porque en esta
+    # VM no hay escritorio real donde Chromium pueda dibujarse.
+    command-prefix: "xvfb-run,-a,--server-args=-screen 0 1920x1080x24,python3"
