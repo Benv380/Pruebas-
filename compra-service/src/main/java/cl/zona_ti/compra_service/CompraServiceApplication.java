@@ -2,9 +2,10 @@ package cl.zona_ti.compra_service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
-@EneableScheduling
+@EnableScheduling
 public class CompraServiceApplication {
 
     public static void main(String[] args) {
